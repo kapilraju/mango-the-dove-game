@@ -73,7 +73,7 @@ export function render(state, ctx) {
     ctx.font = 'bold 48px sans-serif';
     ctx.fillText('Mango The Dove', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
     ctx.font = '24px sans-serif';
-    ctx.fillText('Tap or press SPACE to start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20);
+    ctx.fillText('Tap screen or press SPACE to start', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 20);
   }
 
   // Game over screen
@@ -87,6 +87,6 @@ export function render(state, ctx) {
     ctx.font = '28px sans-serif';
     ctx.fillText(`Score: ${state.score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     ctx.font = '22px sans-serif';
-    ctx.fillText('Tap or press SPACE to restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50);
+    ctx.fillText('Tap screen or press SPACE to restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50);
   }
 }

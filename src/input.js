@@ -1,13 +1,13 @@
 /**
  * Input handling for Mango The Dove.
- * Listens for keydown on window and touchstart on the canvas element,
- * calling the provided callback when the spacebar is pressed or screen is tapped.
+ * Listens for keydown and touchstart events, calling the provided callback
+ * when the spacebar is pressed or the screen is tapped.
  */
 
 /**
  * Initializes keyboard and touch input handling.
  * @param {Function} onAction - Callback invoked on spacebar press or screen tap.
- * @param {HTMLCanvasElement} canvas - The game canvas element to attach touch events to.
+ * @param {HTMLCanvasElement} [canvas] - Unused, kept for API compatibility.
  */
 export function initInput(onAction, canvas) {
   window.addEventListener('keydown', (event) => {
@@ -17,9 +17,9 @@ export function initInput(onAction, canvas) {
     }
   });
 
-  // Attach to canvas so touch-action:none CSS takes effect and passive:false works reliably
-  const touchTarget = canvas || window;
-  touchTarget.addEventListener('touchstart', (event) => {
+  // Listen on document so any tap anywhere on the screen triggers the action.
+  // passive:false is required to allow preventDefault() on iOS Safari / Android Chrome.
+  document.addEventListener('touchstart', (event) => {
     event.preventDefault();
     onAction();
   }, { passive: false });
