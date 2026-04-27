@@ -2,6 +2,10 @@
 
 > This project was built using [Kiro](https://kiro.dev), an AI-powered IDE, following a spec-driven development workflow. The full spec (requirements, design, and tasks) lives in `.kiro/specs/`.
 
+## Play Now
+
+🕹️ **[Click here to play Mango The Dove](https://kapilraju.github.io/mango-the-dove-game/)**
+
 ## Gameplay
 
 ![Mango The Dove gameplay screenshot](assets/screenshot.png)
