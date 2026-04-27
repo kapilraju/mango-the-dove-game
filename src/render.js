@@ -8,7 +8,7 @@ import {
 } from './constants.js';
 
 const birdImage = new Image();
-birdImage.src = '../assets/bird.png';
+birdImage.src = 'assets/bird.png';
 
 export function render(state, ctx) {
   // Clear canvas
