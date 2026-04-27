@@ -1,5 +1,7 @@
 # Mango The Dove
 
+> This project was built using [Kiro](https://kiro.dev), an AI-powered IDE, following a spec-driven development workflow. The full spec (requirements, design, and tasks) lives in `.kiro/specs/`.
+
 A browser-based game where you guide a dove through pipe gaps. Built with vanilla JavaScript and the HTML5 Canvas API. No build step required.
 
 ## Running the Game
