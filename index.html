@@ -2,19 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Mango The Dove</title>
   <style>
-    body {
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background: #70c5ce;
+    }
+    body {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
     }
     canvas {
       display: block;
+      /* Scale canvas to fit viewport while preserving aspect ratio */
+      max-width: 100vw;
+      max-height: 100vh;
+      /* Prevent all default touch behaviors on the canvas */
+      touch-action: none;
     }
   </style>
 </head>

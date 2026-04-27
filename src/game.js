@@ -15,7 +15,7 @@ if (!ctx) {
 } else {
   const state = createInitialState();
   state.highScore = 0;
-  initInput(() => flap(state));
+  initInput(() => flap(state), canvas);
   const boundRender = (state) => render(state, ctx);
   startLoop(state, update, boundRender);
 }
