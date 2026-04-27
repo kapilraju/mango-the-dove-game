@@ -179,6 +179,12 @@ Implement a browser-based Mango The Dove game using vanilla JavaScript and the H
   - [x] 13.6 Checkpoint — Ensure all tests pass
     - Run `npx vitest --run` and confirm all tests pass
 
+- [x] 14. Implement touch input support for mobile
+  - [x] 14.1 Add `touchstart` event listener to `src/input.js`
+    - Inside `initInput(onSpacebar)`, add `window.addEventListener('touchstart', (event) => { event.preventDefault(); onSpacebar(); }, { passive: false })`
+    - The `passive: false` option is required to allow `preventDefault()` to suppress scrolling/zooming on iOS Safari and Android Chrome
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for a faster MVP

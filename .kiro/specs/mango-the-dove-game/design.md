@@ -39,7 +39,7 @@ flowchart TD
 - `loop.js` — `requestAnimationFrame` loop, calls update then render each frame
 - `update.js` — physics (gravity, velocity, position), pipe spawning/movement, collision detection, scoring, high score tracking, state transitions
 - `render.js` — draws everything to the canvas each frame
-- `input.js` — listens for spacebar, dispatches flap or state-transition actions
+- `input.js` — listens for spacebar and touchstart events, dispatches flap or state-transition actions
 
 ---
 
@@ -178,17 +178,25 @@ function createInitialState() {
 
 ### State Transitions
 
-| From       | Event              | To         | Side Effects                        |
-|------------|--------------------|------------|-------------------------------------|
-| START      | spacebar           | PLAYING    | reset state, start loop             |
-| PLAYING    | bird hits ground   | GAME_OVER  | freeze physics                      |
-| PLAYING    | bird hits pipe     | GAME_OVER  | freeze physics                      |
-| GAME_OVER  | spacebar / restart | START      | update highScore, call createInitialState() |
+| From       | Event                        | To         | Side Effects                        |
+|------------|------------------------------|------------|-------------------------------------|
+| START      | spacebar / tap               | PLAYING    | reset state, start loop             |
+| PLAYING    | bird hits ground             | GAME_OVER  | freeze physics                      |
+| PLAYING    | bird hits pipe               | GAME_OVER  | freeze physics                      |
+| GAME_OVER  | spacebar / tap / restart     | START      | update highScore, call createInitialState() |
+
+### Input Handling
+
+`initInput(onSpacebar)` registers two event listeners on `window`:
+
+1. **`keydown`** — fires `onSpacebar()` when `event.key === ' '`
+2. **`touchstart`** — fires `onSpacebar()` on any touch, and calls `event.preventDefault()` to suppress browser scroll/zoom behavior on mobile (iOS Safari, Android Chrome)
+
+Both listeners invoke the same `onSpacebar` callback, so touch input is fully equivalent to spacebar across all game phases (START, PLAYING, GAME_OVER).
 
 ---
 
 
-## Correctness Properties
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 

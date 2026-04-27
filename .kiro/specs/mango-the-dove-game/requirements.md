@@ -13,10 +13,11 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 - **Ground**: The bottom boundary of the game area; contact causes the Bird to die
 - **Ceiling**: The top boundary of the game area
 - **Score**: The count of Pipe pairs the Bird has successfully passed through
-- **Flap**: The upward impulse applied to the Bird when the player presses the space bar
+- **Flap**: The upward impulse applied to the Bird when the player presses the space bar or taps the screen
 - **Gravity**: The constant downward acceleration applied to the Bird each game tick
 - **Game_Over_Screen**: The UI displayed when the Bird dies
 - **Start_Screen**: The UI displayed before the game begins
+- **Touch_Input**: A finger tap or touch gesture on a touchscreen device
 
 ## Requirements
 
@@ -80,6 +81,20 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 2. WHEN the player presses the space bar on the Start_Screen, THE Game SHALL begin gameplay.
 3. WHEN the Game_Over_Screen is displayed, THE Game SHALL provide an option to restart the game.
 4. WHEN the player selects restart on the Game_Over_Screen, THE Game SHALL reset all game state and return to the Start_Screen.
+
+---
+
+### Requirement 7: Touch Input Support
+
+**User Story:** As a mobile player, I want to tap the screen to control the bird, so that I can play the game on a touchscreen device without a keyboard.
+
+#### Acceptance Criteria
+
+1. WHEN the player taps the screen during the PLAYING phase, THE Game SHALL apply a Flap to the Bird (equivalent to pressing the space bar).
+2. WHEN the player taps the screen on the Start_Screen, THE Game SHALL begin gameplay (equivalent to pressing the space bar).
+3. WHEN the player taps the screen on the Game_Over_Screen, THE Game SHALL restart the game (equivalent to pressing the space bar).
+4. WHEN a Touch_Input event is received during gameplay, THE Input_Handler SHALL call preventDefault() on the touch event to suppress default browser behaviors such as scrolling and zooming.
+5. THE Input_Handler SHALL handle Touch_Input on iOS Safari and Android Chrome browsers deployed via GitHub Pages.
 
 ---
 
