@@ -347,7 +347,7 @@ Both unit tests and property-based tests are required. They are complementary:
 Each property test must run a minimum of **100 iterations**.
 
 Each test must include a comment tag in the format:
-`// Feature: flappy-bird-game, Property N: <property text>`
+`// Feature: mango-the-dove-game, Property N: <property text>`
 
 | Property | Test Description | fast-check Arbitraries |
 |----------|-----------------|------------------------|

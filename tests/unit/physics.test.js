@@ -14,7 +14,7 @@ function makePlaying(overrides = {}) {
   };
 }
 
-// Feature: flappy-bird-game, Property 1: Bird horizontal position is invariant
+// Feature: mango-the-dove-game, Property 1: Bird horizontal position is invariant
 describe('P1: Bird x never changes after N ticks', () => {
   it('bird.x stays equal to BIRD_X after any number of ticks', () => {
     fc.assert(
@@ -30,7 +30,7 @@ describe('P1: Bird x never changes after N ticks', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 2: Physics tick correctly updates velocity and position
+// Feature: mango-the-dove-game, Property 2: Physics tick correctly updates velocity and position
 describe('P2: Physics tick correctly updates velocity and position', () => {
   it('vy increases by GRAVITY and y updates by new vy each tick', () => {
     fc.assert(
@@ -55,7 +55,7 @@ describe('P2: Physics tick correctly updates velocity and position', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 3: Flap sets velocity to upward impulse
+// Feature: mango-the-dove-game, Property 3: Flap sets velocity to upward impulse
 describe('P3: Flap sets vy to -FLAP_IMPULSE', () => {
   it('flap sets bird.vy to -FLAP_IMPULSE regardless of prior vy', () => {
     fc.assert(
@@ -68,7 +68,7 @@ describe('P3: Flap sets vy to -FLAP_IMPULSE', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 5: Bird y clamped at ceiling
+// Feature: mango-the-dove-game, Property 5: Bird y clamped at ceiling
 describe('P5: Bird y clamped at ceiling', () => {
   it('bird.y is never negative after an update tick', () => {
     fc.assert(
@@ -83,7 +83,7 @@ describe('P5: Bird y clamped at ceiling', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 14: Bird rotation reflects vertical velocity
+// Feature: mango-the-dove-game, Property 14: Bird rotation reflects vertical velocity
 describe('P14: Bird rotation reflects vertical velocity', () => {
   it('rotation is negative after flap (negative vy) and positive when falling (positive vy)', () => {
     fc.assert(

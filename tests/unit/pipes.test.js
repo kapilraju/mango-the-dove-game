@@ -17,7 +17,7 @@ function makePlaying(overrides = {}) {
   };
 }
 
-// Feature: flappy-bird-game, Property 6: Pipes spawn after interval elapses
+// Feature: mango-the-dove-game, Property 6: Pipes spawn after interval elapses
 describe('P6: Pipes spawn after interval elapses', () => {
   it('pipes array grows by 1 when timestamp - lastPipeTime >= PIPE_INTERVAL', () => {
     fc.assert(
@@ -43,7 +43,7 @@ describe('P6: Pipes spawn after interval elapses', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 7: All pipe gaps are within the playable vertical range
+// Feature: mango-the-dove-game, Property 7: All pipe gaps are within the playable vertical range
 describe('P7: All pipe gaps are within the playable vertical range', () => {
   it('gapY is within [GAP_MIN_Y, CANVAS_HEIGHT - GROUND_HEIGHT - GAP_SIZE - GAP_MIN_Y]', () => {
     const maxGapY = CANVAS_HEIGHT - GROUND_HEIGHT - GAP_SIZE - GAP_MIN_Y;
@@ -64,7 +64,7 @@ describe('P7: All pipe gaps are within the playable vertical range', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 8: Pipes move left by PIPE_SPEED each tick
+// Feature: mango-the-dove-game, Property 8: Pipes move left by PIPE_SPEED each tick
 describe('P8: Pipes move left by PIPE_SPEED each tick', () => {
   it('each pipe.x decreases by PIPE_SPEED after one tick', () => {
     fc.assert(
@@ -84,7 +84,7 @@ describe('P8: Pipes move left by PIPE_SPEED each tick', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 9: Off-screen pipes are removed
+// Feature: mango-the-dove-game, Property 9: Off-screen pipes are removed
 describe('P9: Off-screen pipes are removed', () => {
   it('no pipe has x + PIPE_WIDTH < 0 after an update tick', () => {
     fc.assert(

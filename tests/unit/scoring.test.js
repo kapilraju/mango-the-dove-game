@@ -14,7 +14,7 @@ function makePlaying(overrides = {}) {
   };
 }
 
-// Feature: flappy-bird-game, Property 10: Score increments exactly once per pipe passed
+// Feature: mango-the-dove-game, Property 10: Score increments exactly once per pipe passed
 describe('P10: Score increments exactly once per pipe passed', () => {
   it('score increments by 1 when bird passes a pipe for the first time', () => {
     fc.assert(

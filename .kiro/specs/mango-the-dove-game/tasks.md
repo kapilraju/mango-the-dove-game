@@ -184,5 +184,5 @@ Implement a browser-based Mango The Dove game using vanilla JavaScript and the H
 - Tasks marked with `*` are optional and can be skipped for a faster MVP
 - Test files live in `tests/unit/` — physics.test.js, pipes.test.js, collision.test.js, scoring.test.js, state.test.js
 - Run tests with `npx vitest --run` after installing `vitest` and `fast-check`
-- Each property test must include a comment: `// Feature: flappy-bird-game, Property N: <property text>`
+- Each property test must include a comment: `// Feature: mango-the-dove-game, Property N: <property text>`
 - The game requires no build step — open index.html directly in a browser (or via a local static server for ES modules)

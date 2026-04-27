@@ -4,7 +4,7 @@ import { createInitialState } from '../../src/state.js';
 import { flap } from '../../src/update.js';
 import { BIRD_X, CANVAS_HEIGHT } from '../../src/constants.js';
 
-// Feature: flappy-bird-game, Property 11: Initial state has phase START
+// Feature: mango-the-dove-game, Property 11: Initial state has phase START
 describe('P11: Initial state has phase START', () => {
   it('createInitialState returns phase START, score 0, empty pipes, bird at center', () => {
     const state = createInitialState();
@@ -27,7 +27,7 @@ describe('P11: Initial state has phase START', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 12: Spacebar in START phase transitions to PLAYING
+// Feature: mango-the-dove-game, Property 12: Spacebar in START phase transitions to PLAYING
 describe('P12: Spacebar in START phase transitions to PLAYING', () => {
   it('flap on START state sets phase to PLAYING', () => {
     const state = createInitialState();
@@ -46,7 +46,7 @@ describe('P12: Spacebar in START phase transitions to PLAYING', () => {
   });
 });
 
-// Feature: flappy-bird-game, Property 13: Restart produces clean initial state
+// Feature: mango-the-dove-game, Property 13: Restart produces clean initial state
 describe('P13: Restart (spacebar in GAME_OVER) produces clean initial state', () => {
   it('flap on GAME_OVER resets to START with score 0 and empty pipes', () => {
     fc.assert(
@@ -80,7 +80,7 @@ describe('P13: Restart (spacebar in GAME_OVER) produces clean initial state', ()
   });
 });
 
-// Feature: flappy-bird-game, Property 15: High score is monotonically non-decreasing across rounds
+// Feature: mango-the-dove-game, Property 15: High score is monotonically non-decreasing across rounds
 describe('P15: High score is monotonically non-decreasing across rounds', () => {
   it('highScore never decreases across a sequence of rounds', () => {
     fc.assert(
@@ -105,7 +105,7 @@ describe('P15: High score is monotonically non-decreasing across rounds', () => 
   });
 });
 
-// Feature: flappy-bird-game, Property 16: High score is always >= current score
+// Feature: mango-the-dove-game, Property 16: High score is always >= current score
 describe('P16: High score is always >= current score', () => {
   it('highScore >= score at all times during a session', () => {
     fc.assert(

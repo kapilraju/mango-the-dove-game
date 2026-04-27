@@ -16,7 +16,7 @@ function makePlaying(overrides = {}) {
   };
 }
 
-// Feature: flappy-bird-game, Property 4: Any collision transitions to GAME_OVER
+// Feature: mango-the-dove-game, Property 4: Any collision transitions to GAME_OVER
 describe('P4: Any collision transitions to GAME_OVER', () => {
   it('ground collision: bird.y + BIRD_SIZE >= CANVAS_HEIGHT - GROUND_HEIGHT → GAME_OVER', () => {
     fc.assert(
