@@ -1,5 +1,6 @@
 import { GRAVITY, BIRD_X, BIRD_SIZE, FLAP_IMPULSE, PIPE_SPAWN_X, PIPE_INTERVAL, GAP_MIN_Y, CANVAS_HEIGHT, GROUND_HEIGHT, GAP_SIZE, PIPE_SPEED, PIPE_WIDTH, BURGER_ROLL_TARGET, BURGER_SIZE, ENLARGE_DURATION } from './constants.js';
 import { createInitialState } from './state.js';
+import { trackGameStart, trackGameOver, trackBurgerCollected, trackRestart } from './analytics.js';
 
 export function update(state, timestamp) {
   if (state.phase !== 'PLAYING') return;
@@ -81,6 +82,7 @@ export function update(state, timestamp) {
       bird.enlarged = true;
       bird.currentSize = BIRD_SIZE * 1.5;
       bird.enlargeTimer = ENLARGE_DURATION;
+      trackBurgerCollected();
     }
   }
 
@@ -101,6 +103,7 @@ export function update(state, timestamp) {
   // Collision detection — ground
   if (bird.y + bird.currentSize >= CANVAS_HEIGHT - GROUND_HEIGHT) {
     state.phase = 'GAME_OVER';
+    trackGameOver(state.score, state.highScore ?? 0);
     return;
   }
 
@@ -112,6 +115,7 @@ export function update(state, timestamp) {
       const inBottomPipe = bird.y + bird.currentSize > pipe.gapY + GAP_SIZE;
       if (inTopPipe || inBottomPipe) {
         state.phase = 'GAME_OVER';
+        trackGameOver(state.score, state.highScore ?? 0);
         return;
       }
     }
@@ -126,9 +130,11 @@ export function flap(state) {
     Object.assign(state, createInitialState());
     state.highScore = highScore;
     state.phase = 'PLAYING';
+    trackGameStart();
   } else if (state.phase === 'GAME_OVER') {
     const highScore = Math.max(state.highScore ?? 0, state.score);
     Object.assign(state, createInitialState());
     state.highScore = highScore;
+    trackRestart();
   }
 }
