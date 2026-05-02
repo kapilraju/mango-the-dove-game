@@ -19,8 +19,8 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 - **Start_Screen**: The UI displayed before the game begins
 - **Touch_Input**: A finger tap or touch gesture on a touchscreen device
 - **Burger**: A collectible item that may be attached to a Pipe and collected by the Bird to trigger a size-doubling power-up
-- **Burger_Roll**: The random determination (1–6) made each time the Bird passes a Pipe, which decides whether a Burger is attached to the next Pipe. The roll is skipped entirely while the Bird is in the Enlarged_State.
-- **Enlarge_Timer**: The 5-second countdown tracking how many seconds remain in the Enlarged_State. The timer is not reset by further Burger collection while already enlarged.
+- **Burger_Roll**: The random determination (1–6) made each time the Bird passes a Pipe, which decides whether a Burger is attached to the next Pipe. The roll is skipped entirely while the Bird is in the Enlarged_State, so no new Burgers can appear while the Bird is inflated.
+- **Enlarge_Timer**: The 5-second countdown tracking how many seconds remain in the Enlarged_State.
 - **Debug_Mode**: A developer testing mode activated by appending `?debug` to the page URL, which enables an on-screen overlay showing internal game variables
 - **Debug_Overlay**: The on-screen panel rendered in Debug_Mode displaying the current `BURGER_ROLL_TARGET` array and the most recent Burger_Roll value
 
@@ -70,9 +70,10 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 
 #### Acceptance Criteria
 
-1. WHEN the Bird successfully passes through a Pipe pair's Gap, THE Game SHALL increment the Score by 1.
-2. THE Game SHALL display the current Score visibly on screen during gameplay.
-3. WHEN the Game_Over_Screen is displayed, THE Game SHALL show the final Score achieved in that round.
+1. WHEN the Bird successfully passes through a Pipe pair's Gap AND the Bird is NOT in the Enlarged_State, THE Game SHALL increment the Score by 1.
+2. WHEN the Bird successfully passes through a Pipe pair's Gap AND the Bird IS in the Enlarged_State, THE Game SHALL increment the Score by 2.
+3. THE Game SHALL display the current Score visibly on screen during gameplay.
+4. WHEN the Game_Over_Screen is displayed, THE Game SHALL show the final Score achieved in that round.
 
 ---
 
@@ -158,6 +159,7 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 4. WHILE the Bird is in the Enlarged_State and the Bird's bounding box overlaps a Burger's bounding box, THE Game SHALL have no effect — the Burger SHALL remain in play and the Bird's size and timer SHALL NOT change.
 5. WHILE the Bird is in the Enlarged_State, THE Game SHALL use the enlarged collision size for all pipe and ground collision detection.
 6. WHEN the Bird transitions out of the Enlarged_State, THE Game SHALL restore the Bird's collision size to BIRD_SIZE.
+7. WHILE the Bird is in the Enlarged_State, THE Game SHALL skip the Burger_Roll entirely when the Bird passes a Pipe, so no new Burgers can spawn during the inflation period.
 
 ---
 
@@ -168,6 +170,6 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 #### Acceptance Criteria
 
 1. WHILE a Burger is attached to a Pipe and the Pipe is on screen, THE Game SHALL render the Burger sprite (assets/burger.png) at the Burger's position on the canvas.
-2. WHILE the Bird is in the Enlarged_State, THE Game SHALL render the Bird sprite at the enlarged size (BIRD_SIZE × 2 per active doubling) to visually reflect the current collision size.
+2. WHILE the Bird is in the Enlarged_State, THE Game SHALL render the Bird sprite at the enlarged size (BIRD_SIZE × 1.5) to visually reflect the current collision size.
 3. WHEN a Burger image asset fails to load, THE Game SHALL render a fallback colored rectangle at the Burger's position so the Burger remains visible and collectible.
 4. WHILE the Bird is in the Enlarged_State, THE Game SHALL display the remaining Enlarge_Timer duration (in whole seconds) on screen so the player can see how long the enlargement lasts.

@@ -6,7 +6,7 @@ A browser-based Mango The Dove game implemented in vanilla JavaScript using the 
 
 The implementation follows a simple game loop pattern: update state each tick, then render the updated state to the canvas. Game state is modeled as a plain JavaScript object, making it easy to reset and reason about.
 
-The game also features a **Burger power-up mechanic**: when the bird passes a pipe, there is a 1-in-6 chance a burger collectible spawns on the next pipe. Collecting a burger doubles the bird's size for 5 seconds, making navigation harder but adding excitement. Burgers can stack — collecting another burger while already enlarged doubles the current size again and resets the timer.
+The game also features a **Burger power-up mechanic**: when the bird passes a pipe, there is a chance (based on `BURGER_ROLL_TARGET`) a burger collectible spawns on the next pipe. Collecting a burger inflates the bird to 1.5× its base size for 5 seconds, making navigation harder but adding excitement. While the bird is inflated, the burger roll is skipped entirely — no new burgers can appear. Collecting another burger while already enlarged has no effect; the burger remains in play.
 
 **Technology choices:**
 - HTML5 Canvas for rendering (no external libraries)
@@ -71,7 +71,7 @@ bird: {
   vy: Number,           // vertical velocity (positive = downward)
   rotation: Number,     // visual rotation in radians
   enlarged: Boolean,    // true while in Enlarged_State
-  currentSize: Number,  // active collision/render size (BIRD_SIZE when normal, BIRD_SIZE*2^n when enlarged)
+  currentSize: Number,  // active collision/render size (BIRD_SIZE when normal, BIRD_SIZE*1.5 when enlarged)
   enlargeTimer: Number  // seconds remaining in Enlarged_State (0 when not enlarged)
 }
 ```
@@ -83,6 +83,7 @@ Key behaviors:
 - `rotation` is derived from `vy` (clamped between -30° and +90°)
 - `currentSize` is used for all collision detection and rendering (replaces the constant `BIRD_SIZE` in those calculations)
 - `enlargeTimer` counts down each tick by `deltaTime` (seconds); when it reaches 0, `enlarged` is set to false and `currentSize` resets to `BIRD_SIZE`
+- While enlarged, collecting another burger has no effect — the burger remains in play and the bird's size/timer are unchanged
 
 ### Pipes
 
@@ -152,14 +153,14 @@ for (const pipe of state.pipes) {
       bird.y < burgerBottom &&
       birdBottom > pipe.burger.y;
     if (overlaps) {
-      pipe.burger.collected = true;  // remove from play
       if (bird.enlarged) {
-        bird.currentSize *= 2;       // stack: double current size
-      } else {
-        bird.enlarged = true;
-        bird.currentSize = BIRD_SIZE * 2;
+        // While enlarged, burgers have no effect — burger stays in play
+        continue;
       }
-      bird.enlargeTimer = ENLARGE_DURATION;  // always reset to 5s
+      pipe.burger.collected = true;  // remove from play
+      bird.enlarged = true;
+      bird.currentSize = BIRD_SIZE * 1.5;
+      bird.enlargeTimer = ENLARGE_DURATION;  // start 5s timer
     }
   }
 }
@@ -183,9 +184,11 @@ if (bird.enlarged) {
 ### Score
 
 ```js
-score: Number      // incremented each time bird passes a pipe pair
+score: Number      // incremented each time bird passes a pipe pair (+1 normal, +2 while enlarged)
 highScore: Number  // session best; updated when score exceeds it; never reset on restart
 ```
+
+Scoring awards **2 points** per pipe passed while the bird is in the Enlarged_State, and **1 point** otherwise. This makes the burger power-up a risk/reward trade-off: the bird is harder to navigate at 1.5× size, but scores double.
 
 The `highScore` is initialized to `0` when the game first loads (in `game.js`, not in `createInitialState`). On every restart, before resetting per-round state, the caller does:
 ```js
@@ -378,11 +381,11 @@ Both listeners invoke the same `onSpacebar` callback, so touch input is fully eq
 
 ---
 
-### Property 10: Score increments exactly once per pipe passed
+### Property 10: Score increments correctly per pipe passed
 
-*For any* PLAYING game state where the bird's x crosses a pipe's x for the first time (pipe not yet scored), after the update tick the score should be exactly one greater than before, and the pipe should be marked as scored.
+*For any* PLAYING game state where the bird's x crosses a pipe's x for the first time (pipe not yet scored), after the update tick the score should increase by 1 if the bird is not enlarged, or by 2 if the bird is in the Enlarged_State, and the pipe should be marked as scored.
 
-**Validates: Requirements 4.1**
+**Validates: Requirements 4.1, 4.2**
 
 ---
 
@@ -468,23 +471,23 @@ Both listeners invoke the same `onSpacebar` callback, so touch input is fully eq
 
 ### Property 21: Collecting a burger enters Enlarged_State with correct initial values
 
-*For any* PLAYING game state where the bird's bounding box overlaps a burger and the bird is not currently enlarged, after the update tick: the burger should be marked as collected, `bird.enlarged === true`, `bird.currentSize === BIRD_SIZE * 2`, and `bird.enlargeTimer === ENLARGE_DURATION`.
+*For any* PLAYING game state where the bird's bounding box overlaps a burger and the bird is not currently enlarged, after the update tick: the burger should be marked as collected, `bird.enlarged === true`, `bird.currentSize === BIRD_SIZE * 1.5`, and `bird.enlargeTimer === ENLARGE_DURATION`.
 
 **Validates: Requirements 9.1, 9.2**
 
 ---
 
-### Property 22: Timer expiry restores bird to base size regardless of stacking
+### Property 22: Timer expiry restores bird to base size
 
-*For any* enlarged bird state (regardless of how many burgers were stacked and what `currentSize` is), after enough ticks for `enlargeTimer` to reach 0: `bird.enlarged === false`, `bird.currentSize === BIRD_SIZE`, and `bird.enlargeTimer === 0`.
+*For any* enlarged bird state, after enough ticks for `enlargeTimer` to reach 0: `bird.enlarged === false`, `bird.currentSize === BIRD_SIZE`, and `bird.enlargeTimer === 0`.
 
 **Validates: Requirements 9.3, 9.6**
 
 ---
 
-### Property 23: Collecting a burger while enlarged doubles current size and resets timer
+### Property 23: Collecting a burger while enlarged has no effect
 
-*For any* enlarged bird state with `currentSize === S`, when the bird's bounding box overlaps a burger, after the update tick: `bird.currentSize === S * 2` and `bird.enlargeTimer === ENLARGE_DURATION`.
+*For any* enlarged bird state with `currentSize === S`, when the bird's bounding box overlaps a burger, after the update tick: the burger should NOT be collected (remains in play), `bird.currentSize` should remain `S`, and `bird.enlargeTimer` should be unchanged.
 
 **Validates: Requirements 9.4**
 
@@ -607,7 +610,7 @@ Each test must include a comment tag in the format:
 | P7 | Pipe gapY in valid range | `fc.integer(...)` for random seed |
 | P8 | Pipe moves left by PIPE_SPEED | `fc.float()` for pipe x |
 | P9 | No off-screen pipes remain | `fc.array(...)` of pipe states |
-| P10 | Score increments once per pipe | `fc.record(...)` for bird/pipe crossing state |
+| P10 | Score increments +1 normal, +2 enlarged per pipe | `fc.record(...)` for bird/pipe crossing state, `fc.boolean()` for enlarged |
 | P11 | Initial state invariants | (example test, no arbitraries needed) |
 | P12 | START + spacebar → PLAYING | (example test) |
 | P13 | GAME_OVER + restart → clean state | `fc.record(...)` for any GAME_OVER state |
@@ -619,8 +622,8 @@ Each test must include a comment tag in the format:
 | P19 | Burger position centered on pipe and in bottom half of gap | `fc.integer(...)` for gapY within valid range |
 | P20 | At most one burger per pipe pair | `fc.array(...)` of pipe states after N updates |
 | P21 | Collecting burger → Enlarged_State with correct values | `fc.record(...)` for overlapping bird/burger positions |
-| P22 | Timer expiry restores size to BIRD_SIZE | `fc.float({min:0.001,max:5})` for initial enlargeTimer, `fc.integer(...)` for stacking count |
-| P23 | Stacking burger doubles current size and resets timer | `fc.integer({min:1,max:4})` for stacking depth, `fc.record(...)` for enlarged bird state |
+| P22 | Timer expiry restores size to BIRD_SIZE | `fc.float({min:0.001,max:5})` for initial enlargeTimer |
+| P23 | Collecting burger while enlarged has no effect — burger stays, size unchanged | `fc.record(...)` for enlarged bird state overlapping a burger |
 | P24 | Enlarged collision applies to ground/pipe detection | `fc.record(...)` for bird positions near boundaries using currentSize |
 | P25 | Render uses bird.currentSize when drawing bird | `fc.integer({min:BIRD_SIZE,max:BIRD_SIZE*8})` for currentSize |
 | P26 | Render displays Math.ceil(enlargeTimer) when enlarged | `fc.float({min:0.001,max:5})` for enlargeTimer |
@@ -650,7 +653,7 @@ tests/
     collision.test.js     // P4, P24
     scoring.test.js       // P10
     state.test.js         // P11, P12, P13, P15, P16
-    burger.test.js        // P17, P21, P22, P23 (burger collection and enlarge logic)
+    burger.test.js        // P17, P21, P22, P23 (burger collection and enlarge logic — no stacking)
     render.test.js        // P25, P26 (burger/bird rendering with mock canvas context)
 ```
 

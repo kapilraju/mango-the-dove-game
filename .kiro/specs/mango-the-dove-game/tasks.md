@@ -226,10 +226,8 @@ Implement a browser-based Mango The Dove game using vanilla JavaScript and the H
   - In `src/update.js`, each tick after pipe movement, iterate over `state.pipes` and check AABB overlap between the bird's bounding box (using `bird.currentSize`) and each pipe's burger:
     - Skip if `pipe.burger === null` or `pipe.burger.collected === true`
     - Compute overlap: `bird.x < burgerRight && birdRight > pipe.burger.x && bird.y < burgerBottom && birdBottom > pipe.burger.y`
-    - On overlap: set `pipe.burger.collected = true`
-    - If `bird.enlarged`: set `bird.currentSize *= 2` (stack doubling)
-    - Else: set `bird.enlarged = true`, `bird.currentSize = BIRD_SIZE * 2`
-    - Always: set `bird.enlargeTimer = ENLARGE_DURATION`
+    - On overlap: if `bird.enlarged`, skip (burger stays in play, no effect)
+    - Else: set `pipe.burger.collected = true`, `bird.enlarged = true`, `bird.currentSize = BIRD_SIZE * 1.5`, `bird.enlargeTimer = ENLARGE_DURATION`
   - Import `ENLARGE_DURATION` from `./constants.js`
   - _Requirements: 9.1, 9.2, 9.4_
 
@@ -285,20 +283,20 @@ Implement a browser-based Mango The Dove game using vanilla JavaScript and the H
 
   - [ ]* 27.2 Write property test for burger collection entering Enlarged_State (P21)
     - Use `fc.record(...)` for overlapping bird/burger positions where bird is not enlarged
-    - Assert: `burger.collected === true`, `bird.enlarged === true`, `bird.currentSize === BIRD_SIZE * 2`, `bird.enlargeTimer === ENLARGE_DURATION`
+    - Assert: `burger.collected === true`, `bird.enlarged === true`, `bird.currentSize === BIRD_SIZE * 1.5`, `bird.enlargeTimer === ENLARGE_DURATION`
     - **Property 21: Collecting a burger enters Enlarged_State with correct initial values**
     - **Validates: Requirements 9.1, 9.2**
 
   - [ ]* 27.3 Write property test for timer expiry restoring base size (P22)
-    - Use `fc.float({min:0.001,max:5})` for initial enlargeTimer and `fc.integer({min:1,max:4})` for stacking count
+    - Use `fc.float({min:0.001,max:5})` for initial enlargeTimer
     - Assert: after timer reaches 0, `bird.enlarged === false`, `bird.currentSize === BIRD_SIZE`, `bird.enlargeTimer === 0`
-    - **Property 22: Timer expiry restores bird to base size regardless of stacking**
+    - **Property 22: Timer expiry restores bird to base size**
     - **Validates: Requirements 9.3, 9.6**
 
-  - [ ]* 27.4 Write property test for stacking burger doubles size and resets timer (P23)
-    - Use `fc.integer({min:1,max:4})` for stacking depth and `fc.record(...)` for enlarged bird state with `currentSize === S`
-    - Assert: after collecting another burger, `bird.currentSize === S * 2` and `bird.enlargeTimer === ENLARGE_DURATION`
-    - **Property 23: Collecting a burger while enlarged doubles current size and resets timer**
+  - [ ]* 27.4 Write property test for collecting burger while enlarged has no effect (P23)
+    - Use `fc.record(...)` for enlarged bird state overlapping a burger
+    - Assert: after update, burger is NOT collected, `bird.currentSize` unchanged, `bird.enlargeTimer` unchanged
+    - **Property 23: Collecting a burger while enlarged has no effect**
     - **Validates: Requirements 9.4**
 
 - [x] 28. Write property tests for burger pipe spawning
@@ -345,14 +343,14 @@ Implement a browser-based Mango The Dove game using vanilla JavaScript and the H
   - Run `npx vitest --run` and confirm all tests pass (existing and new)
   - Ask the user if any questions arise.
 
-- [ ] 32. Change BURGER_ROLL_TARGET from a number to an array
-  - In `src/constants.js`, change `export const BURGER_ROLL_TARGET = 2;` to `export const BURGER_ROLL_TARGET = [2];`
+- [x] 32. Change BURGER_ROLL_TARGET from a number to an array
+  - In `src/constants.js`, change `export const BURGER_ROLL_TARGET = 2;` to `export const BURGER_ROLL_TARGET = [2, 4, 6];`
   - In `src/update.js`, change the roll check from `roll === BURGER_ROLL_TARGET` to `BURGER_ROLL_TARGET.includes(roll)`
   - Store the roll result in `state.lastRoll` each time a roll is performed: `state.lastRoll = roll;`
   - In `src/state.js`, add `lastRoll: null` to `createInitialState()` so it resets to `null` on restart
   - _Requirements: 8.2, 8.4_
 
-- [ ] 33. Implement debug overlay
+- [x] 33. Implement debug overlay
   - In `src/game.js`, detect the debug flag once at load: `const DEBUG = new URLSearchParams(window.location.search).has('debug');`
   - Pass `DEBUG` into the render call (update `startLoop` / `render` signature, or export `DEBUG` from `game.js` and import it in `render.js`)
   - In `src/render.js`, when `DEBUG === true` and `state.phase === 'PLAYING'`, draw the debug overlay in the bottom-right corner:
@@ -362,9 +360,16 @@ Implement a browser-based Mango The Dove game using vanilla JavaScript and the H
     - Use `ctx.font = '13px monospace'`, `ctx.fillStyle = '#00ff99'`, `ctx.textAlign = 'right'`
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6_
 
-- [ ] 34. Final checkpoint — Ensure all tests pass
+- [x] 34. Final checkpoint — Ensure all tests pass
   - Run `npx vitest --run` and confirm all tests pass
   - Ask the user if any questions arise.
+
+- [x] 35. Implement double scoring while enlarged
+  - In `src/update.js`, change `state.score += 1` to `state.score += bird.enlarged ? 2 : 1` in the scoring block
+  - Update `tests/unit/scoring.test.js` to test both +1 (normal) and +2 (enlarged) scoring
+  - Update Property 10 in design.md to reflect the new scoring rule
+  - Add acceptance criteria 4.1 and 4.2 to requirements.md Requirement 4
+  - _Requirements: 4.1, 4.2_
 
 ## Notes
 
