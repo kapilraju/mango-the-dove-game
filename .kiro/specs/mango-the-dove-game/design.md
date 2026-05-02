@@ -78,7 +78,7 @@ bird: {
 
 Key behaviors:
 - `x` is fixed; the world scrolls left
-- Each tick: `vy += GRAVITY`, `y += vy`
+- Each tick: `vy += GRAVITY * dt`, `y += vy * dt` (semi-implicit Euler, time-based)
 - On flap: `vy = -FLAP_IMPULSE`
 - `rotation` is derived from `vy` (clamped between -30° and +90°)
 - `currentSize` is used for all collision detection and rendering (replaces the constant `BIRD_SIZE` in those calculations)
@@ -107,7 +107,7 @@ pipes: [
 Key behaviors:
 - Spawned at `PIPE_SPAWN_INTERVAL` ms (or pixel distance)
 - `gapY` randomized within `[GAP_MIN_Y, CANVAS_HEIGHT - GROUND_HEIGHT - GAP_SIZE - GAP_MIN_Y]`
-- Each tick: `x -= PIPE_SPEED`
+- Each tick: `x -= PIPE_SPEED * dt`
 - Removed when `x + PIPE_WIDTH < 0`
 - `burger` is `null` unless the pipe was selected for a burger spawn (see Burger Spawning below)
 - At most one burger per pipe pair at any time
@@ -200,16 +200,18 @@ The high score is rendered persistently on the right side of the canvas at all t
 
 ### Game Constants
 
+All physics constants are expressed in **per-second** units. The `update()` function multiplies them by `deltaTime` (seconds since last frame) each tick, making the game run at the same speed regardless of monitor refresh rate (60Hz, 120Hz, 144Hz, etc.). A `deltaTime` cap of 0.05s prevents physics explosions on tab-switch or debugger pause.
+
 ```js
 const CANVAS_WIDTH = 480;
 const CANVAS_HEIGHT = 640;
 const GROUND_HEIGHT = 80;
 const BIRD_X = 100;              // fixed horizontal position
 const BIRD_SIZE = 30;            // base collision radius / sprite size
-const GRAVITY = 0.5;             // px/tick² downward acceleration
-const FLAP_IMPULSE = 9;          // upward velocity on spacebar
+const GRAVITY = 1800;            // px/s² downward acceleration
+const FLAP_IMPULSE = 540;        // px/s upward velocity on spacebar
 const PIPE_WIDTH = 60;
-const PIPE_SPEED = 3;            // px/tick leftward
+const PIPE_SPEED = 180;          // px/s leftward
 const GAP_SIZE = 150;            // vertical gap between top and bottom pipe
 const PIPE_SPAWN_X = 600;        // x position where new pipes spawn
 const PIPE_INTERVAL = 1800;      // ms between pipe spawns
@@ -319,7 +321,7 @@ Both listeners invoke the same `onSpacebar` callback, so touch input is fully eq
 
 ### Property 2: Physics tick correctly updates velocity and position
 
-*For any* bird state with velocity `vy` and position `y`, after one update tick, the new velocity should be `vy + GRAVITY` and the new position should be `y + (vy + GRAVITY)`.
+*For any* bird state with velocity `vy` and position `y`, after one update tick with deltaTime `dt`, the new velocity should be `vy + GRAVITY * dt` and the new position should be `y + (vy + GRAVITY * dt) * dt`.
 
 **Validates: Requirements 1.2, 1.4**
 
@@ -365,9 +367,9 @@ Both listeners invoke the same `onSpacebar` callback, so touch input is fully eq
 
 ---
 
-### Property 8: Pipes move left by PIPE_SPEED each tick
+### Property 8: Pipes move left by PIPE_SPEED * dt each tick
 
-*For any* pipe in the pipes array with position `x`, after one update tick its position should be `x - PIPE_SPEED`.
+*For any* pipe in the pipes array with position `x`, after one update tick with deltaTime `dt`, its position should be `x - PIPE_SPEED * dt`.
 
 **Validates: Requirements 3.3**
 

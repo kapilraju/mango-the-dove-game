@@ -3,6 +3,8 @@ import * as fc from 'fast-check';
 import { update } from '../../src/update.js';
 import { BIRD_X, BIRD_SIZE, CANVAS_HEIGHT, PIPE_WIDTH, GAP_SIZE, ENLARGE_DURATION } from '../../src/constants.js';
 
+const TS = 5000;
+
 function makePlaying(overrides = {}) {
   const base = {
     phase: 'PLAYING',
@@ -11,7 +13,7 @@ function makePlaying(overrides = {}) {
     score: 0,
     lastPipeTime: Number.MAX_SAFE_INTEGER,
     pendingBurger: false,
-    lastTimestamp: 0,
+    lastTimestamp: TS,
     highScore: 0,
   };
   if (overrides.bird) {
@@ -35,7 +37,7 @@ describe('P10: Score increments correctly per pipe passed', () => {
             score: scoreBefore,
             pipes: [{ x: pipeX, gapY, scored: false }],
           });
-          update(state, Number.MAX_SAFE_INTEGER);
+          update(state, TS);
           expect(state.score).toBe(scoreBefore + 1);
           expect(state.pipes[0].scored).toBe(true);
         }
@@ -59,7 +61,7 @@ describe('P10: Score increments correctly per pipe passed', () => {
             },
             pipes: [{ x: pipeX, gapY, scored: false }],
           });
-          update(state, Number.MAX_SAFE_INTEGER);
+          update(state, TS);
           expect(state.score).toBe(scoreBefore + 2);
           expect(state.pipes[0].scored).toBe(true);
         }
@@ -78,7 +80,7 @@ describe('P10: Score increments correctly per pipe passed', () => {
             score: scoreBefore,
             pipes: [{ x: pipeX, gapY, scored: true }],
           });
-          update(state, Number.MAX_SAFE_INTEGER);
+          update(state, TS);
           expect(state.score).toBe(scoreBefore);
         }
       )
