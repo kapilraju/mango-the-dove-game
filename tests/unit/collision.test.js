@@ -85,47 +85,38 @@ describe('P4: Any collision transitions to GAME_OVER', () => {
 // Feature: mango-the-dove-game, Property 24: Enlarged collision size applies to ground and pipe detection
 describe('P24: Enlarged collision size applies to ground and pipe detection', () => {
   it('sub-test 1: enlarged bird hits ground when normal bird would not', () => {
-    fc.assert(
-      fc.property(
-        fc.integer({ min: 1, max: 4 }),
-        (stackDepth) => {
-          const currentSize = BIRD_SIZE * Math.pow(2, stackDepth);
-          // safeForBase: just safe for BIRD_SIZE (bottom = CANVAS_HEIGHT - GROUND_HEIGHT - 1)
-          const safeForBase = CANVAS_HEIGHT - GROUND_HEIGHT - BIRD_SIZE - 1;
-          // With currentSize > BIRD_SIZE, bird.y + currentSize > CANVAS_HEIGHT - GROUND_HEIGHT → GAME_OVER
-          const state = {
-            phase: 'PLAYING',
-            bird: {
-              x: BIRD_X,
-              y: safeForBase,
-              vy: 0,
-              rotation: 0,
-              enlarged: true,
-              currentSize,
-              enlargeTimer: 5,
-            },
-            pipes: [],
-            score: 0,
-            lastPipeTime: Number.MAX_SAFE_INTEGER,
-            pendingBurger: false,
-            lastTimestamp: 0,
-            highScore: 0,
-          };
-          update(state, Number.MAX_SAFE_INTEGER);
-          expect(state.phase).toBe('GAME_OVER');
-        }
-      ),
-      { numRuns: 100 }
-    );
+    const currentSize = BIRD_SIZE * 1.5;
+    // safeForBase: just safe for BIRD_SIZE (bottom = CANVAS_HEIGHT - GROUND_HEIGHT - 1)
+    const safeForBase = CANVAS_HEIGHT - GROUND_HEIGHT - BIRD_SIZE - 1;
+    // With currentSize > BIRD_SIZE, bird.y + currentSize > CANVAS_HEIGHT - GROUND_HEIGHT → GAME_OVER
+    const state = {
+      phase: 'PLAYING',
+      bird: {
+        x: BIRD_X,
+        y: safeForBase,
+        vy: 0,
+        rotation: 0,
+        enlarged: true,
+        currentSize,
+        enlargeTimer: 5,
+      },
+      pipes: [],
+      score: 0,
+      lastPipeTime: Number.MAX_SAFE_INTEGER,
+      pendingBurger: false,
+      lastTimestamp: 0,
+      highScore: 0,
+    };
+    update(state, Number.MAX_SAFE_INTEGER);
+    expect(state.phase).toBe('GAME_OVER');
   });
 
   it('sub-test 2: enlarged bird hits pipe when normal bird would not', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 3 }),
         fc.integer({ min: 100, max: 200 }),
-        (stackDepth, gapY) => {
-          const currentSize = BIRD_SIZE * Math.pow(2, stackDepth);
+        (gapY) => {
+          const currentSize = BIRD_SIZE * 1.5;
           // bird.y = gapY + GAP_SIZE - BIRD_SIZE: bottom = gapY + GAP_SIZE → just fits with BIRD_SIZE
           // With currentSize > BIRD_SIZE: bottom = bird.y + currentSize > gapY + GAP_SIZE → hits bottom pipe
           const birdY = gapY + GAP_SIZE - BIRD_SIZE;

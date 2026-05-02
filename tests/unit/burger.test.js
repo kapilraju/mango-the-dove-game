@@ -60,7 +60,7 @@ describe('P21: Collecting a burger enters Enlarged_State with correct initial va
           const pipe = state.pipes[0];
           expect(pipe.burger.collected).toBe(true);
           expect(state.bird.enlarged).toBe(true);
-          expect(state.bird.currentSize).toBe(BIRD_SIZE * 2);
+          expect(state.bird.currentSize).toBe(BIRD_SIZE * 1.5);
           expect(state.bird.enlargeTimer).toBe(ENLARGE_DURATION);
         }
       ),
@@ -69,15 +69,14 @@ describe('P21: Collecting a burger enters Enlarged_State with correct initial va
   });
 });
 
-// Feature: mango-the-dove-game, Property 22: Timer expiry restores bird to base size regardless of stacking
-describe('P22: Timer expiry restores bird to base size regardless of stacking', () => {
-  it('bird returns to BIRD_SIZE after enlargeTimer expires regardless of stack depth', () => {
+// Feature: mango-the-dove-game, Property 22: Timer expiry restores bird to base size
+describe('P22: Timer expiry restores bird to base size', () => {
+  it('bird returns to BIRD_SIZE after enlargeTimer expires', () => {
     fc.assert(
       fc.property(
         fc.float({ min: Math.fround(0.001), max: Math.fround(5), noNaN: true }),
-        fc.integer({ min: 1, max: 4 }),
-        (initialTimer, stackDepth) => {
-          const stackedSize = BIRD_SIZE * Math.pow(2, stackDepth);
+        (initialTimer) => {
+          const enlargedSize = BIRD_SIZE * 1.5;
           // lastTimestamp = 1000ms, timestamp = 1000 + initialTimer*1000 + 100ms → deltaTime > initialTimer
           const lastTimestamp = 1000;
           const timestamp = 1000 + initialTimer * 1000 + 100;
@@ -93,7 +92,7 @@ describe('P22: Timer expiry restores bird to base size regardless of stacking', 
               vy: 0,
               rotation: 0,
               enlarged: true,
-              currentSize: stackedSize,
+              currentSize: enlargedSize,
               enlargeTimer: initialTimer,
             },
             pipes: [],
@@ -117,14 +116,14 @@ describe('P22: Timer expiry restores bird to base size regardless of stacking', 
   });
 });
 
-// Feature: mango-the-dove-game, Property 23: Collecting a burger while enlarged doubles current size and resets timer
-describe('P23: Collecting a burger while enlarged doubles current size and resets timer', () => {
-  it('collecting a burger while already enlarged doubles currentSize and resets enlargeTimer', () => {
+// Feature: mango-the-dove-game, Property 23: Collecting a burger while enlarged has no effect
+describe('P23: Collecting a burger while enlarged has no effect', () => {
+  it('burger stays in play and bird size/timer are unchanged when collecting while enlarged', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 4 }),
-        (stackDepth) => {
-          const currentSize = BIRD_SIZE * Math.pow(2, stackDepth);
+        fc.float({ min: Math.fround(0.5), max: Math.fround(4.5), noNaN: true }),
+        (remainingTimer) => {
+          const currentSize = BIRD_SIZE * 1.5;
           const birdY = 250;
           const burgerX = BIRD_X;
           const burgerY = birdY;
@@ -138,7 +137,7 @@ describe('P23: Collecting a burger while enlarged doubles current size and reset
               rotation: 0,
               enlarged: true,
               currentSize: currentSize,
-              enlargeTimer: 1.0, // some remaining time
+              enlargeTimer: remainingTimer,
             },
             pipes: [
               {
@@ -157,8 +156,10 @@ describe('P23: Collecting a burger while enlarged doubles current size and reset
 
           update(state, 1);
 
-          expect(state.bird.currentSize).toBe(currentSize * 2);
-          expect(state.bird.enlargeTimer).toBe(ENLARGE_DURATION);
+          // Burger should NOT be collected — it stays in play
+          expect(state.pipes[0].burger.collected).toBe(false);
+          // Bird size should remain unchanged
+          expect(state.bird.currentSize).toBe(currentSize);
           expect(state.bird.enlarged).toBe(true);
         }
       ),

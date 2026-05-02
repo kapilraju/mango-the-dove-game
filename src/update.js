@@ -70,13 +70,11 @@ export function update(state, timestamp) {
     const burgerBottom = pipe.burger.y + BURGER_SIZE;
     const overlaps = bird.x < burgerRight && birdRight > pipe.burger.x && bird.y < burgerBottom && birdBottom > pipe.burger.y;
     if (overlaps) {
+      // While enlarged, burgers have no effect — burger stays in play
+      if (bird.enlarged) continue;
       pipe.burger.collected = true;
-      if (bird.enlarged) {
-        bird.currentSize *= 2;
-      } else {
-        bird.enlarged = true;
-        bird.currentSize = BIRD_SIZE * 1.5;
-      }
+      bird.enlarged = true;
+      bird.currentSize = BIRD_SIZE * 1.5;
       bird.enlargeTimer = ENLARGE_DURATION;
     }
   }
@@ -84,12 +82,14 @@ export function update(state, timestamp) {
   // Scoring — increment score when bird passes a pipe for the first time
   for (const pipe of state.pipes) {
     if (bird.x > pipe.x + PIPE_WIDTH && pipe.scored === false) {
-      state.score += 1;
+      state.score += bird.enlarged ? 2 : 1;
       pipe.scored = true;
-      // Burger_Roll: roll a d6, record result, set pendingBurger if roll is in target array
-      const roll = Math.floor(Math.random() * 6) + 1;
-      state.lastRoll = roll;
-      if (BURGER_ROLL_TARGET.includes(roll)) { state.pendingBurger = true; }
+      // Burger_Roll: skip entirely while bird is enlarged (no new burgers during inflation)
+      if (!bird.enlarged) {
+        const roll = Math.floor(Math.random() * 6) + 1;
+        state.lastRoll = roll;
+        if (BURGER_ROLL_TARGET.includes(roll)) { state.pendingBurger = true; }
+      }
     }
   }
 
