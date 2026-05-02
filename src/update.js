@@ -1,10 +1,24 @@
-import { GRAVITY, BIRD_X, BIRD_SIZE, FLAP_IMPULSE, PIPE_SPAWN_X, PIPE_INTERVAL, GAP_MIN_Y, CANVAS_HEIGHT, GROUND_HEIGHT, GAP_SIZE, PIPE_SPEED, PIPE_WIDTH } from './constants.js';
+import { GRAVITY, BIRD_X, BIRD_SIZE, FLAP_IMPULSE, PIPE_SPAWN_X, PIPE_INTERVAL, GAP_MIN_Y, CANVAS_HEIGHT, GROUND_HEIGHT, GAP_SIZE, PIPE_SPEED, PIPE_WIDTH, BURGER_ROLL_TARGET, BURGER_SIZE, ENLARGE_DURATION } from './constants.js';
 import { createInitialState } from './state.js';
 
 export function update(state, timestamp) {
   if (state.phase !== 'PLAYING') return;
 
+  // Compute deltaTime in seconds since last frame
+  const deltaTime = state.lastTimestamp > 0 ? (timestamp - state.lastTimestamp) / 1000 : 0;
+  state.lastTimestamp = timestamp;
+
   const bird = state.bird;
+
+  // Enlarge timer countdown — decrement before burger collection check
+  if (bird.enlarged) {
+    bird.enlargeTimer -= deltaTime;
+    if (bird.enlargeTimer <= 0) {
+      bird.enlarged = false;
+      bird.currentSize = BIRD_SIZE;
+      bird.enlargeTimer = 0;
+    }
+  }
 
   // Apply gravity
   bird.vy += GRAVITY;
@@ -25,36 +39,72 @@ export function update(state, timestamp) {
   // Spawn new pipe when interval has elapsed
   if (timestamp - state.lastPipeTime >= PIPE_INTERVAL) {
     const gapY = GAP_MIN_Y + Math.random() * (CANVAS_HEIGHT - GROUND_HEIGHT - GAP_SIZE - 2 * GAP_MIN_Y);
-    state.pipes.push({ x: PIPE_SPAWN_X, gapY, scored: false });
+    const pipe = { x: PIPE_SPAWN_X, gapY, scored: false, burger: null };
+    if (state.pendingBurger) {
+      const burgerX = pipe.x + PIPE_WIDTH / 2 - BURGER_SIZE / 2;
+      const gapMid = gapY + GAP_SIZE / 2;
+      const burgerY = gapMid + Math.random() * (GAP_SIZE / 2 - BURGER_SIZE);
+      pipe.burger = { x: burgerX, y: burgerY, collected: false };
+      state.pendingBurger = false;
+    }
+    state.pipes.push(pipe);
     state.lastPipeTime = timestamp;
   }
 
   // Move all pipes left and remove off-screen pipes
   for (const pipe of state.pipes) {
     pipe.x -= PIPE_SPEED;
+    // Move burger with its pipe
+    if (pipe.burger && !pipe.burger.collected) {
+      pipe.burger.x -= PIPE_SPEED;
+    }
   }
   state.pipes = state.pipes.filter(pipe => pipe.x + PIPE_WIDTH >= 0);
+
+  // Burger collection — check AABB overlap between bird and each pipe's burger
+  for (const pipe of state.pipes) {
+    if (!pipe.burger || pipe.burger.collected === true) continue;
+    const birdRight = bird.x + bird.currentSize;
+    const birdBottom = bird.y + bird.currentSize;
+    const burgerRight = pipe.burger.x + BURGER_SIZE;
+    const burgerBottom = pipe.burger.y + BURGER_SIZE;
+    const overlaps = bird.x < burgerRight && birdRight > pipe.burger.x && bird.y < burgerBottom && birdBottom > pipe.burger.y;
+    if (overlaps) {
+      pipe.burger.collected = true;
+      if (bird.enlarged) {
+        bird.currentSize *= 2;
+      } else {
+        bird.enlarged = true;
+        bird.currentSize = BIRD_SIZE * 1.5;
+      }
+      bird.enlargeTimer = ENLARGE_DURATION;
+    }
+  }
 
   // Scoring — increment score when bird passes a pipe for the first time
   for (const pipe of state.pipes) {
     if (bird.x > pipe.x + PIPE_WIDTH && pipe.scored === false) {
       state.score += 1;
       pipe.scored = true;
+      // Burger_Roll: roll a d6, record result, set pendingBurger if roll is in target array
+      const roll = Math.floor(Math.random() * 6) + 1;
+      state.lastRoll = roll;
+      if (BURGER_ROLL_TARGET.includes(roll)) { state.pendingBurger = true; }
     }
   }
 
   // Collision detection — ground
-  if (bird.y + BIRD_SIZE >= CANVAS_HEIGHT - GROUND_HEIGHT) {
+  if (bird.y + bird.currentSize >= CANVAS_HEIGHT - GROUND_HEIGHT) {
     state.phase = 'GAME_OVER';
     return;
   }
 
   // Collision detection — pipes
   for (const pipe of state.pipes) {
-    const horizontalOverlap = bird.x + BIRD_SIZE > pipe.x && bird.x < pipe.x + PIPE_WIDTH;
+    const horizontalOverlap = bird.x + bird.currentSize > pipe.x && bird.x < pipe.x + PIPE_WIDTH;
     if (horizontalOverlap) {
       const inTopPipe = bird.y < pipe.gapY;
-      const inBottomPipe = bird.y + BIRD_SIZE > pipe.gapY + GAP_SIZE;
+      const inBottomPipe = bird.y + bird.currentSize > pipe.gapY + GAP_SIZE;
       if (inTopPipe || inBottomPipe) {
         state.phase = 'GAME_OVER';
         return;

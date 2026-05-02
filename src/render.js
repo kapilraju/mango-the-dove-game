@@ -5,12 +5,17 @@ import {
   BIRD_SIZE,
   PIPE_WIDTH,
   GAP_SIZE,
+  BURGER_SIZE,
+  BURGER_ROLL_TARGET,
 } from './constants.js';
 
 const birdImage = new Image();
 birdImage.src = 'assets/bird.png';
 
-export function render(state, ctx) {
+const burgerImage = new Image();
+burgerImage.src = 'assets/burger.png';
+
+export function render(state, ctx, debug = false) {
   // Clear canvas
   ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -28,6 +33,18 @@ export function render(state, ctx) {
     ctx.fillRect(pipe.x, bottomY, PIPE_WIDTH, CANVAS_HEIGHT - GROUND_HEIGHT - bottomY);
   }
 
+  // Burgers
+  for (const pipe of state.pipes) {
+    if (pipe.burger !== null && !pipe.burger.collected) {
+      if (burgerImage.complete && burgerImage.naturalWidth > 0) {
+        ctx.drawImage(burgerImage, pipe.burger.x, pipe.burger.y, BURGER_SIZE, BURGER_SIZE);
+      } else {
+        ctx.fillStyle = '#c8640a';
+        ctx.fillRect(pipe.burger.x, pipe.burger.y, BURGER_SIZE, BURGER_SIZE);
+      }
+    }
+  }
+
   // Ground
   ctx.fillStyle = '#c8a96e';
   ctx.fillRect(0, CANVAS_HEIGHT - GROUND_HEIGHT, CANVAS_WIDTH, GROUND_HEIGHT);
@@ -39,14 +56,14 @@ export function render(state, ctx) {
   // Bird
   const { bird } = state;
   ctx.save();
-  ctx.translate(bird.x + BIRD_SIZE / 2, bird.y + BIRD_SIZE / 2);
+  ctx.translate(bird.x + bird.currentSize / 2, bird.y + bird.currentSize / 2);
   ctx.rotate(bird.rotation);
   if (birdImage.complete && birdImage.naturalWidth > 0) {
-    ctx.drawImage(birdImage, -BIRD_SIZE / 2, -BIRD_SIZE / 2, BIRD_SIZE, BIRD_SIZE);
+    ctx.drawImage(birdImage, -bird.currentSize / 2, -bird.currentSize / 2, bird.currentSize, bird.currentSize);
   } else {
     // Fallback while image loads
     ctx.fillStyle = '#f5d800';
-    ctx.fillRect(-BIRD_SIZE / 2, -BIRD_SIZE / 2, BIRD_SIZE, BIRD_SIZE);
+    ctx.fillRect(-bird.currentSize / 2, -bird.currentSize / 2, bird.currentSize, bird.currentSize);
   }
   ctx.restore();
 
@@ -56,6 +73,14 @@ export function render(state, ctx) {
     ctx.font = 'bold 32px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(`Score: ${state.score}`, CANVAS_WIDTH / 2, 48);
+
+    // Enlarge timer HUD
+    if (state.bird.enlarged) {
+      ctx.fillStyle = '#ff8800';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`Big: ${Math.ceil(state.bird.enlargeTimer)}s`, 12, 48);
+    }
   }
 
   // High score — always visible in top-right corner
@@ -88,5 +113,16 @@ export function render(state, ctx) {
     ctx.fillText(`Score: ${state.score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     ctx.font = '22px sans-serif';
     ctx.fillText('Tap screen or press SPACE to restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50);
+  }
+
+  // Debug overlay — visible only when ?debug is in the URL and game is PLAYING
+  if (debug && state.phase === 'PLAYING') {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(CANVAS_WIDTH - 160, CANVAS_HEIGHT - 60, 155, 52);
+    ctx.fillStyle = '#00ff99';
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`target: ${JSON.stringify(BURGER_ROLL_TARGET)}`, CANVAS_WIDTH - 8, CANVAS_HEIGHT - 42);
+    ctx.fillText(`roll:   ${state.lastRoll ?? '\u2014'}`, CANVAS_WIDTH - 8, CANVAS_HEIGHT - 24);
   }
 }

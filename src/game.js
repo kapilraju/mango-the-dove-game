@@ -5,6 +5,9 @@ import { update, flap } from './update.js';
 import { render } from './render.js';
 import { startLoop } from './loop.js';
 
+// Detect debug mode once at page load — activate with ?debug in the URL
+const DEBUG = new URLSearchParams(window.location.search).has('debug');
+
 const canvas = document.getElementById('gameCanvas');
 canvas.width = CANVAS_WIDTH;
 canvas.height = CANVAS_HEIGHT;
@@ -16,6 +19,6 @@ if (!ctx) {
   const state = createInitialState();
   state.highScore = 0;
   initInput(() => flap(state), canvas);
-  const boundRender = (state) => render(state, ctx);
+  const boundRender = (state) => render(state, ctx, DEBUG);
   startLoop(state, update, boundRender);
 }

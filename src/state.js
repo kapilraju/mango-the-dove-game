@@ -1,11 +1,14 @@
-import { BIRD_X, CANVAS_HEIGHT } from './constants.js';
+import { BIRD_X, BIRD_SIZE, CANVAS_HEIGHT } from './constants.js';
 
 export function createInitialState() {
   return {
     phase: 'START',
-    bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: 0, rotation: 0 },
+    bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: 0, rotation: 0, enlarged: false, currentSize: BIRD_SIZE, enlargeTimer: 0 },
     pipes: [],
     score: 0,
-    lastPipeTime: 0
+    lastPipeTime: 0,
+    pendingBurger: false,
+    lastTimestamp: 0,
+    lastRoll: null
   };
 }

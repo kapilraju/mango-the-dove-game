@@ -18,6 +18,11 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 - **Game_Over_Screen**: The UI displayed when the Bird dies
 - **Start_Screen**: The UI displayed before the game begins
 - **Touch_Input**: A finger tap or touch gesture on a touchscreen device
+- **Burger**: A collectible item that may be attached to a Pipe and collected by the Bird to trigger a size-doubling power-up
+- **Burger_Roll**: The random determination (1–6) made each time the Bird passes a Pipe, which decides whether a Burger is attached to the next Pipe. The roll is skipped entirely while the Bird is in the Enlarged_State.
+- **Enlarge_Timer**: The 5-second countdown tracking how many seconds remain in the Enlarged_State. The timer is not reset by further Burger collection while already enlarged.
+- **Debug_Mode**: A developer testing mode activated by appending `?debug` to the page URL, which enables an on-screen overlay showing internal game variables
+- **Debug_Overlay**: The on-screen panel rendered in Debug_Mode displaying the current `BURGER_ROLL_TARGET` array and the most recent Burger_Roll value
 
 ## Requirements
 
@@ -108,3 +113,61 @@ A Flappy Bird-style browser game where the player controls a bird that continuou
 2. THE Game SHALL visually represent the Bird, Pipes, Ground, Score, and game boundaries on a canvas element.
 3. WHEN the Bird performs a Flap, THE Game SHALL visually rotate the Bird upward to indicate the flap direction.
 4. WHILE the Bird is falling, THE Game SHALL visually rotate the Bird downward to indicate the fall direction.
+
+---
+
+### Requirement 8: Burger Collectible Spawning
+
+**User Story:** As a player, I want burgers to occasionally appear on pipes, so that I have a chance to collect a power-up that changes the challenge.
+
+#### Acceptance Criteria
+
+1. WHEN the Bird successfully passes through a Pipe pair's Gap AND the Bird is NOT in the Enlarged_State, THE Game SHALL perform a Burger_Roll by generating a random integer uniformly distributed in the range [1, 6].
+2. WHEN the Burger_Roll result is contained in the `BURGER_ROLL_TARGET` array, THE Game SHALL attach a Burger to the next Pipe that spawns after the roll.
+3. WHEN a Burger is attached to a Pipe, THE Game SHALL position the Burger horizontally centered on that Pipe and vertically within the bottom half of that Pipe's Gap (between the Gap midpoint and the bottom of the Gap, inclusive).
+4. WHEN the Burger_Roll result is not contained in the `BURGER_ROLL_TARGET` array, THE Game SHALL NOT attach a Burger to the next Pipe.
+5. THE Game SHALL allow at most one Burger to be attached to any single Pipe pair at a time.
+6. WHILE the Bird is in the Enlarged_State, THE Game SHALL skip the Burger_Roll entirely when the Bird passes a Pipe.
+
+---
+
+### Requirement 11: Debug Overlay
+
+**User Story:** As a developer, I want to see internal game variables on screen when I pass a debug flag in the URL, so that I can tune and verify the burger mechanic without modifying source code.
+
+#### Acceptance Criteria
+
+1. WHEN the page URL contains the query parameter `debug` (e.g., `?debug` or `?debug=true`), THE Game SHALL activate Debug_Mode for the duration of that page session.
+2. WHILE Debug_Mode is active and the game phase is PLAYING, THE Game SHALL render the Debug_Overlay in the bottom-right corner of the canvas.
+3. THE Debug_Overlay SHALL display the current value of `BURGER_ROLL_TARGET` (the full array, e.g., `[2]`) on one line.
+4. THE Debug_Overlay SHALL display the most recent Burger_Roll result (the last integer rolled when the bird passed a pipe) on a second line.
+5. WHEN no Burger_Roll has yet occurred in the current session, THE Debug_Overlay SHALL display `—` as the roll value placeholder.
+6. THE Debug_Mode flag SHALL be determined once at page load from `window.location.search` and SHALL NOT require a page reload to take effect during a session.
+
+---
+
+### Requirement 9: Burger Collection and Bird Enlargement
+
+**User Story:** As a player, I want collecting a burger to increase my bird's size, so that gameplay becomes harder and more exciting.
+
+#### Acceptance Criteria
+
+1. WHEN the Bird's bounding box overlaps a Burger's bounding box AND the Bird is NOT in the Enlarged_State, THE Game SHALL remove the Burger from the game and transition the Bird into the Enlarged_State.
+2. WHEN the Bird enters the Enlarged_State, THE Game SHALL set the Bird's rendered and collision size to `BIRD_SIZE × 1.5` and start the Enlarge_Timer at 5 seconds.
+3. WHEN the Enlarge_Timer reaches 0 seconds, THE Game SHALL transition the Bird out of the Enlarged_State and restore the Bird's rendered and collision size to BIRD_SIZE.
+4. WHILE the Bird is in the Enlarged_State and the Bird's bounding box overlaps a Burger's bounding box, THE Game SHALL have no effect — the Burger SHALL remain in play and the Bird's size and timer SHALL NOT change.
+5. WHILE the Bird is in the Enlarged_State, THE Game SHALL use the enlarged collision size for all pipe and ground collision detection.
+6. WHEN the Bird transitions out of the Enlarged_State, THE Game SHALL restore the Bird's collision size to BIRD_SIZE.
+
+---
+
+### Requirement 10: Burger Rendering and Visual Feedback
+
+**User Story:** As a player, I want to clearly see burgers on pipes and know when my bird is enlarged, so that I can make informed decisions during gameplay.
+
+#### Acceptance Criteria
+
+1. WHILE a Burger is attached to a Pipe and the Pipe is on screen, THE Game SHALL render the Burger sprite (assets/burger.png) at the Burger's position on the canvas.
+2. WHILE the Bird is in the Enlarged_State, THE Game SHALL render the Bird sprite at the enlarged size (BIRD_SIZE × 2 per active doubling) to visually reflect the current collision size.
+3. WHEN a Burger image asset fails to load, THE Game SHALL render a fallback colored rectangle at the Burger's position so the Burger remains visible and collectible.
+4. WHILE the Bird is in the Enlarged_State, THE Game SHALL display the remaining Enlarge_Timer duration (in whole seconds) on screen so the player can see how long the enlargement lasts.

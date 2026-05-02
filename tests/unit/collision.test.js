@@ -6,14 +6,21 @@ import {
 } from '../../src/constants.js';
 
 function makePlaying(overrides = {}) {
-  return {
+  const base = {
     phase: 'PLAYING',
-    bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: 0, rotation: 0 },
+    bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: 0, rotation: 0, currentSize: BIRD_SIZE, enlarged: false, enlargeTimer: 0 },
     pipes: [],
     score: 0,
     lastPipeTime: Number.MAX_SAFE_INTEGER,
-    ...overrides,
+    pendingBurger: false,
+    lastTimestamp: 0,
   };
+  if (overrides.bird) {
+    base.bird = { ...base.bird, ...overrides.bird };
+    const { bird, ...rest } = overrides;
+    return { ...base, ...rest };
+  }
+  return { ...base, ...overrides };
 }
 
 // Feature: mango-the-dove-game, Property 4: Any collision transitions to GAME_OVER
@@ -71,6 +78,83 @@ describe('P4: Any collision transitions to GAME_OVER', () => {
           expect(state.phase).toBe('GAME_OVER');
         }
       )
+    );
+  });
+});
+
+// Feature: mango-the-dove-game, Property 24: Enlarged collision size applies to ground and pipe detection
+describe('P24: Enlarged collision size applies to ground and pipe detection', () => {
+  it('sub-test 1: enlarged bird hits ground when normal bird would not', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 4 }),
+        (stackDepth) => {
+          const currentSize = BIRD_SIZE * Math.pow(2, stackDepth);
+          // safeForBase: just safe for BIRD_SIZE (bottom = CANVAS_HEIGHT - GROUND_HEIGHT - 1)
+          const safeForBase = CANVAS_HEIGHT - GROUND_HEIGHT - BIRD_SIZE - 1;
+          // With currentSize > BIRD_SIZE, bird.y + currentSize > CANVAS_HEIGHT - GROUND_HEIGHT → GAME_OVER
+          const state = {
+            phase: 'PLAYING',
+            bird: {
+              x: BIRD_X,
+              y: safeForBase,
+              vy: 0,
+              rotation: 0,
+              enlarged: true,
+              currentSize,
+              enlargeTimer: 5,
+            },
+            pipes: [],
+            score: 0,
+            lastPipeTime: Number.MAX_SAFE_INTEGER,
+            pendingBurger: false,
+            lastTimestamp: 0,
+            highScore: 0,
+          };
+          update(state, Number.MAX_SAFE_INTEGER);
+          expect(state.phase).toBe('GAME_OVER');
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('sub-test 2: enlarged bird hits pipe when normal bird would not', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 3 }),
+        fc.integer({ min: 100, max: 200 }),
+        (stackDepth, gapY) => {
+          const currentSize = BIRD_SIZE * Math.pow(2, stackDepth);
+          // bird.y = gapY + GAP_SIZE - BIRD_SIZE: bottom = gapY + GAP_SIZE → just fits with BIRD_SIZE
+          // With currentSize > BIRD_SIZE: bottom = bird.y + currentSize > gapY + GAP_SIZE → hits bottom pipe
+          const birdY = gapY + GAP_SIZE - BIRD_SIZE;
+          // Skip if bird would also hit the ground (avoid ambiguous state)
+          if (birdY + currentSize >= CANVAS_HEIGHT - GROUND_HEIGHT) return;
+          const pipeX = BIRD_X - PIPE_WIDTH / 2; // bird center overlaps pipe horizontally
+          const state = {
+            phase: 'PLAYING',
+            bird: {
+              x: BIRD_X,
+              y: birdY,
+              vy: 0,
+              rotation: 0,
+              enlarged: true,
+              currentSize,
+              enlargeTimer: 5,
+            },
+            pipes: [{ x: pipeX, gapY, scored: true, burger: null }],
+            score: 0,
+            lastPipeTime: Number.MAX_SAFE_INTEGER,
+            pendingBurger: false,
+            lastTimestamp: 0,
+            highScore: 0,
+          };
+          update(state, Number.MAX_SAFE_INTEGER);
+          expect(state.phase).toBe('GAME_OVER');
+        }
+      ),
+      { numRuns: 100 }
     );
   });
 });
