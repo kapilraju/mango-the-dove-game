@@ -6,6 +6,8 @@ import {
   CANVAS_HEIGHT, GROUND_HEIGHT, PIPE_WIDTH
 } from '../../src/constants.js';
 
+const TS = 5000;
+
 // Feature: mango-the-dove-game, Property 17: Burger roll always produces an integer in [1, 6]
 describe('P17: Burger roll always produces an integer in [1, 6]', () => {
   it('Math.floor(Math.random() * 6) + 1 always returns an integer in [1, 6] over 1000 iterations', () => {
@@ -25,7 +27,6 @@ describe('P21: Collecting a burger enters Enlarged_State with correct initial va
       fc.property(
         fc.integer({ min: 50, max: 400 }),
         (birdY) => {
-          // Place burger at exact bird position to guarantee overlap
           const burgerX = BIRD_X;
           const burgerY = birdY;
 
@@ -42,8 +43,8 @@ describe('P21: Collecting a burger enters Enlarged_State with correct initial va
             },
             pipes: [
               {
-                x: BIRD_X - PIPE_WIDTH - 10, // pipe is behind the bird (already passed, no collision)
-                gapY: birdY - 50,            // gap centered around bird so no pipe collision
+                x: BIRD_X - PIPE_WIDTH - 10,
+                gapY: birdY - 50,
                 scored: true,
                 burger: { x: burgerX, y: burgerY, collected: false },
               },
@@ -51,11 +52,11 @@ describe('P21: Collecting a burger enters Enlarged_State with correct initial va
             score: 0,
             lastPipeTime: Number.MAX_SAFE_INTEGER,
             pendingBurger: false,
-            lastTimestamp: 0,
+            lastTimestamp: TS,
             highScore: 0,
           };
 
-          update(state, 1);
+          update(state, TS); // dt = 0
 
           const pipe = state.pipes[0];
           expect(pipe.burger.collected).toBe(true);
@@ -77,11 +78,6 @@ describe('P22: Timer expiry restores bird to base size', () => {
         fc.float({ min: Math.fround(0.001), max: Math.fround(5), noNaN: true }),
         (initialTimer) => {
           const enlargedSize = BIRD_SIZE * 1.5;
-          // lastTimestamp = 1000ms, timestamp = 1000 + initialTimer*1000 + 100ms → deltaTime > initialTimer
-          const lastTimestamp = 1000;
-          const timestamp = 1000 + initialTimer * 1000 + 100;
-
-          // Position bird safely in the middle, away from ground
           const safeY = 200;
 
           const state = {
@@ -99,13 +95,22 @@ describe('P22: Timer expiry restores bird to base size', () => {
             score: 0,
             lastPipeTime: Number.MAX_SAFE_INTEGER,
             pendingBurger: false,
-            lastTimestamp: lastTimestamp,
+            lastTimestamp: 1000,
             highScore: 0,
           };
 
-          update(state, timestamp);
+          // Run enough frames at 50ms dt (the cap) to drain the timer
+          // Each frame drains 0.05s, so we need ceil(initialTimer / 0.05) frames
+          const framesNeeded = Math.ceil(initialTimer / 0.05) + 1;
+          for (let i = 0; i < framesNeeded; i++) {
+            // Reset bird position each frame to avoid ground collision from gravity
+            state.bird.y = safeY;
+            state.bird.vy = 0;
+            const ts = 1000 + (i + 1) * 50; // 50ms per frame
+            update(state, ts);
+            if (!state.bird.enlarged) break;
+          }
 
-          // After timer expires the bird should be back to base size
           expect(state.bird.enlarged).toBe(false);
           expect(state.bird.currentSize).toBe(BIRD_SIZE);
           expect(state.bird.enlargeTimer).toBe(0);
@@ -141,7 +146,7 @@ describe('P23: Collecting a burger while enlarged has no effect', () => {
             },
             pipes: [
               {
-                x: BIRD_X - PIPE_WIDTH - 10, // behind the bird, no collision
+                x: BIRD_X - PIPE_WIDTH - 10,
                 gapY: birdY - 50,
                 scored: true,
                 burger: { x: burgerX, y: burgerY, collected: false },
@@ -150,15 +155,13 @@ describe('P23: Collecting a burger while enlarged has no effect', () => {
             score: 0,
             lastPipeTime: Number.MAX_SAFE_INTEGER,
             pendingBurger: false,
-            lastTimestamp: 0,
+            lastTimestamp: TS,
             highScore: 0,
           };
 
-          update(state, 1);
+          update(state, TS); // dt = 0
 
-          // Burger should NOT be collected — it stays in play
           expect(state.pipes[0].burger.collected).toBe(false);
-          // Bird size should remain unchanged
           expect(state.bird.currentSize).toBe(currentSize);
           expect(state.bird.enlarged).toBe(true);
         }

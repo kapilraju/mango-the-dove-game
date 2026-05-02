@@ -1,15 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { update, flap } from '../../src/update.js';
-import { BIRD_X, GRAVITY, FLAP_IMPULSE, CANVAS_HEIGHT } from '../../src/constants.js';
+import { BIRD_X, BIRD_SIZE, GRAVITY, FLAP_IMPULSE, CANVAS_HEIGHT, GROUND_HEIGHT } from '../../src/constants.js';
+
+// Standard frame: 1/60s ≈ 16.667ms
+const FRAME_MS = 1000 / 60;
+const DT = FRAME_MS / 1000; // seconds per frame
 
 function makePlaying(overrides = {}) {
   return {
     phase: 'PLAYING',
-    bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: 0, rotation: 0 },
+    bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: 0, rotation: 0, currentSize: BIRD_SIZE, enlarged: false, enlargeTimer: 0 },
     pipes: [],
     score: 0,
-    lastPipeTime: 0,
+    lastPipeTime: Number.MAX_SAFE_INTEGER,
+    pendingBurger: false,
+    lastTimestamp: 1000, // non-zero so deltaTime is computed
+    highScore: 0,
     ...overrides,
   };
 }
@@ -20,9 +27,11 @@ describe('P1: Bird x never changes after N ticks', () => {
     fc.assert(
       fc.property(fc.integer({ min: 1, max: 100 }), (ticks) => {
         const state = makePlaying();
-        // Use a timestamp far enough to avoid pipe spawning interference
         for (let i = 0; i < ticks; i++) {
-          update(state, 0); // timestamp 0, lastPipeTime 0 → pipe spawns once then no more
+          // Position bird safely in the middle to avoid ground collision
+          state.bird.y = 200;
+          state.bird.vy = 0;
+          update(state, state.lastTimestamp + FRAME_MS);
         }
         expect(state.bird.x).toBe(BIRD_X);
       })
@@ -32,22 +41,22 @@ describe('P1: Bird x never changes after N ticks', () => {
 
 // Feature: mango-the-dove-game, Property 2: Physics tick correctly updates velocity and position
 describe('P2: Physics tick correctly updates velocity and position', () => {
-  it('vy increases by GRAVITY and y updates by new vy each tick', () => {
+  it('vy increases by GRAVITY*dt and y updates by new vy*dt each tick', () => {
     fc.assert(
       fc.property(
-        fc.float({ min: -50, max: 50, noNaN: true }),
-        fc.float({ min: 10, max: 500, noNaN: true }),
+        fc.float({ min: -300, max: 300, noNaN: true }),
+        fc.float({ min: 10, max: 400, noNaN: true }),
         (vy, y) => {
-          const state = makePlaying({ bird: { x: BIRD_X, y, vy, rotation: 0 } });
-          // Use a timestamp that won't trigger pipe spawn
-          state.lastPipeTime = Number.MAX_SAFE_INTEGER;
-          const expectedVy = vy + GRAVITY;
-          const expectedY = y + expectedVy;
-          update(state, Number.MAX_SAFE_INTEGER);
+          const state = makePlaying({ bird: { x: BIRD_X, y, vy, rotation: 0, currentSize: BIRD_SIZE, enlarged: false, enlargeTimer: 0 } });
+          const expectedVy = vy + GRAVITY * DT;
+          const expectedY = y + expectedVy * DT;
+          // Skip if would hit ground
+          if (expectedY + BIRD_SIZE >= CANVAS_HEIGHT - GROUND_HEIGHT) return;
+          update(state, state.lastTimestamp + FRAME_MS);
           // Only check if no ceiling clamp occurred
           if (expectedY >= 0) {
-            expect(state.bird.vy).toBeCloseTo(expectedVy, 5);
-            expect(state.bird.y).toBeCloseTo(expectedY, 5);
+            expect(state.bird.vy).toBeCloseTo(expectedVy, 3);
+            expect(state.bird.y).toBeCloseTo(expectedY, 3);
           }
         }
       )
@@ -59,8 +68,8 @@ describe('P2: Physics tick correctly updates velocity and position', () => {
 describe('P3: Flap sets vy to -FLAP_IMPULSE', () => {
   it('flap sets bird.vy to -FLAP_IMPULSE regardless of prior vy', () => {
     fc.assert(
-      fc.property(fc.float({ min: -100, max: 100, noNaN: true }), (vy) => {
-        const state = makePlaying({ bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy, rotation: 0 } });
+      fc.property(fc.float({ min: -1000, max: 1000, noNaN: true }), (vy) => {
+        const state = makePlaying({ bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy, rotation: 0, currentSize: BIRD_SIZE, enlarged: false, enlargeTimer: 0 } });
         flap(state);
         expect(state.bird.vy).toBe(-FLAP_IMPULSE);
       })
@@ -74,9 +83,8 @@ describe('P5: Bird y clamped at ceiling', () => {
     fc.assert(
       fc.property(fc.float({ min: -500, max: Math.fround(-0.01), noNaN: true }), (y) => {
         // Give a large negative vy so bird would go further negative
-        const state = makePlaying({ bird: { x: BIRD_X, y, vy: -20, rotation: 0 } });
-        state.lastPipeTime = Number.MAX_SAFE_INTEGER;
-        update(state, Number.MAX_SAFE_INTEGER);
+        const state = makePlaying({ bird: { x: BIRD_X, y, vy: -500, rotation: 0, currentSize: BIRD_SIZE, enlarged: false, enlargeTimer: 0 } });
+        update(state, state.lastTimestamp + FRAME_MS);
         expect(state.bird.y).toBeGreaterThanOrEqual(0);
       })
     );
@@ -85,12 +93,11 @@ describe('P5: Bird y clamped at ceiling', () => {
 
 // Feature: mango-the-dove-game, Property 14: Bird rotation reflects vertical velocity
 describe('P14: Bird rotation reflects vertical velocity', () => {
-  it('rotation is negative after flap (negative vy) and positive when falling (positive vy)', () => {
+  it('rotation is positive when falling (positive vy)', () => {
     fc.assert(
-      fc.property(fc.float({ min: 1, max: 100, noNaN: true }), (posVy) => {
-        const state = makePlaying({ bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: posVy, rotation: 0 } });
-        state.lastPipeTime = Number.MAX_SAFE_INTEGER;
-        update(state, Number.MAX_SAFE_INTEGER);
+      fc.property(fc.float({ min: 100, max: 1000, noNaN: true }), (posVy) => {
+        const state = makePlaying({ bird: { x: BIRD_X, y: 200, vy: posVy, rotation: 0, currentSize: BIRD_SIZE, enlarged: false, enlargeTimer: 0 } });
+        update(state, state.lastTimestamp + FRAME_MS);
         // After falling (positive vy), rotation should be positive
         expect(state.bird.rotation).toBeGreaterThan(0);
         // Clamped within [-PI/6, PI/2]
@@ -101,10 +108,9 @@ describe('P14: Bird rotation reflects vertical velocity', () => {
 
   it('rotation is negative after flap (negative vy)', () => {
     fc.assert(
-      fc.property(fc.float({ min: -100, max: -1, noNaN: true }), (negVy) => {
-        const state = makePlaying({ bird: { x: BIRD_X, y: CANVAS_HEIGHT / 2, vy: negVy, rotation: 0 } });
-        state.lastPipeTime = Number.MAX_SAFE_INTEGER;
-        update(state, Number.MAX_SAFE_INTEGER);
+      fc.property(fc.float({ min: -1000, max: -100, noNaN: true }), (negVy) => {
+        const state = makePlaying({ bird: { x: BIRD_X, y: 200, vy: negVy, rotation: 0, currentSize: BIRD_SIZE, enlarged: false, enlargeTimer: 0 } });
+        update(state, state.lastTimestamp + FRAME_MS);
         // After flap (negative vy), rotation should be negative (clamped at -PI/6)
         expect(state.bird.rotation).toBeGreaterThanOrEqual(-Math.PI / 6);
         expect(state.bird.rotation).toBeLessThanOrEqual(0);

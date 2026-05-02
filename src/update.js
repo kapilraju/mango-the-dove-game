@@ -8,11 +8,14 @@ export function update(state, timestamp) {
   const deltaTime = state.lastTimestamp > 0 ? (timestamp - state.lastTimestamp) / 1000 : 0;
   state.lastTimestamp = timestamp;
 
+  // Cap deltaTime to avoid spiral-of-death on tab switch or debugger pause
+  const dt = Math.min(deltaTime, 0.05);
+
   const bird = state.bird;
 
   // Enlarge timer countdown — decrement before burger collection check
   if (bird.enlarged) {
-    bird.enlargeTimer -= deltaTime;
+    bird.enlargeTimer -= dt;
     if (bird.enlargeTimer <= 0) {
       bird.enlarged = false;
       bird.currentSize = BIRD_SIZE;
@@ -20,9 +23,9 @@ export function update(state, timestamp) {
     }
   }
 
-  // Apply gravity
-  bird.vy += GRAVITY;
-  bird.y += bird.vy;
+  // Apply gravity (semi-implicit Euler: update velocity first, then position)
+  bird.vy += GRAVITY * dt;
+  bird.y += bird.vy * dt;
 
   // Clamp to ceiling
   if (bird.y < 0) {
@@ -34,7 +37,8 @@ export function update(state, timestamp) {
   bird.x = BIRD_X;
 
   // Derive rotation from vy, clamped between -30° and +90°
-  bird.rotation = Math.max(-Math.PI / 6, Math.min(Math.PI / 2, bird.vy * 0.1));
+  // Scale vy to a visual range: divide by 600 (≈ FLAP_IMPULSE) to get similar feel to old 0.1 * vy
+  bird.rotation = Math.max(-Math.PI / 6, Math.min(Math.PI / 2, bird.vy / 600));
 
   // Spawn new pipe when interval has elapsed
   if (timestamp - state.lastPipeTime >= PIPE_INTERVAL) {
@@ -52,11 +56,12 @@ export function update(state, timestamp) {
   }
 
   // Move all pipes left and remove off-screen pipes
+  const pipeMove = PIPE_SPEED * dt;
   for (const pipe of state.pipes) {
-    pipe.x -= PIPE_SPEED;
+    pipe.x -= pipeMove;
     // Move burger with its pipe
     if (pipe.burger && !pipe.burger.collected) {
-      pipe.burger.x -= PIPE_SPEED;
+      pipe.burger.x -= pipeMove;
     }
   }
   state.pipes = state.pipes.filter(pipe => pipe.x + PIPE_WIDTH >= 0);
